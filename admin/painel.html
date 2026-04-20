@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zyrionAdmin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👽</text></svg>"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #111116;
+      --surface2: #18181f;
+      --border: #22222e;
+      --cyan: #22d3ee;
+      --cyan-dim: #0e7490;
+      --text: #e2e8f0;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+    .glass {
+      background: rgba(17,17,22,0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .glass-hover:hover { border-color: var(--cyan-dim); transition: border-color .2s; }
+    .btn-cyan {
+      background: var(--cyan);
+      color: #0a0a0c;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 8px 20px;
+      cursor: pointer;
+      border: none;
+      transition: opacity .2s, transform .1s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-cyan:hover { opacity: .85; }
+    .btn-cyan:active { transform: scale(.97); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-ghost:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+    .btn-danger {
+      background: transparent;
+      color: #f87171;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px;
+    }
+    .btn-danger:hover { background: rgba(239,68,68,.1); }
+    .btn-edit {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid var(--cyan-dim);
+      border-radius: 8px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px;
+    }
+    .btn-edit:hover { background: rgba(34,211,238,.08); }
+    .input-field {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      width: 100%;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .input-field:focus { border-color: var(--cyan); }
+    .input-field::placeholder { color: var(--muted); }
+    .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+    .neon-text { color: var(--cyan); }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-radius: 8px;
+      cursor: pointer; color: var(--muted);
+      transition: background .15s, color .15s;
+      font-size: 14px; font-weight: 500;
+    }
+    .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-item.active { background: rgba(34,211,238,.1); color: var(--cyan); }
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      animation: slideIn .25s ease; min-width: 260px; max-width: 380px;
+      border: 1px solid;
+    }
+    .toast.success { background: rgba(16,185,129,.12); border-color: #065f46; color: #6ee7b7; }
+    .toast.error { background: rgba(239,68,68,.12); border-color: #7f1d1d; color: #fca5a5; }
+    .toast.info { background: rgba(34,211,238,.1); border-color: var(--cyan-dim); color: var(--cyan); }
+    @keyframes slideIn { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
+    @keyframes fadeOut { to { opacity:0; transform: translateX(30px); } }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 8888; backdrop-filter: blur(4px);
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--border);
+      border-top-color: var(--cyan); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-bar-wrap { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--cyan); border-radius: 99px; transition: width .2s; }
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 12px;
+      padding: 32px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .drop-zone.drag-over { border-color: var(--cyan); background: rgba(34,211,238,.05); }
+    .drop-zone:hover { border-color: var(--cyan-dim); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 16px; border-bottom: 1px solid rgba(34,34,46,.5); font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .badge-cyan { background: rgba(34,211,238,.12); color: var(--cyan); border: 1px solid rgba(34,211,238,.2); }
+    .badge-gray { background: rgba(100,116,139,.12); color: var(--muted); border: 1px solid rgba(100,116,139,.2); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }
+    .section { display: none; }
+    .section.active { display: block; }
+    #app { display: none; }
+    #authScreen { display: flex; }
+  </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="loadingOverlay" style="display:none;">
+  <div style="text-align:center;">
+    <div class="spinner" style="margin:0 auto 16px;"></div>
+    <p style="color:var(--muted);font-size:14px;" id="loadingMsg">Carregando...</p>
+  </div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" style="min-height:100vh; align-items:center; justify-content:center; background:var(--bg);">
+  <div class="glass" style="width:100%;max-width:420px;padding:40px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:rgba(34,211,238,.1);border-radius:14px;margin-bottom:16px;border:1px solid rgba(34,211,238,.2);">
+        <i data-lucide="shield" style="color:var(--cyan);width:28px;height:28px;"></i>
+      </div>
+      <h1 style="font-size:22px;font-weight:700;color:var(--text);">StreamHub Admin</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px;" id="authSubtitle">Painel de Controle</p>
+    </div>
+
+    <!-- Setup Screen -->
+    <div id="setupForm" style="display:none;">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;text-align:center;">Nenhuma senha configurada. Crie a senha master.</p>
+      <div style="margin-bottom:16px;">
+        <div class="label">Nova Senha Master</div>
+        <input type="password" id="setupPass" class="input-field" placeholder="Mínimo 8 caracteres" />
+      </div>
+      <div style="margin-bottom:24px;">
+        <div class="label">Confirmar Senha</div>
+        <input type="password" id="setupPassConfirm" class="input-field" placeholder="Repita a senha" />
+      </div>
+      <button class="btn-cyan" style="width:100%;justify-content:center;" onclick="setupPassword()">
+        <i data-lucide="lock" style="width:16px;height:16px;"></i> Criar Senha
+      </button>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginForm" style="display:none;">
+      <div style="margin-bottom:20px;">
+        <div class="label">Senha Master</div>
+        <input type="password" id="loginPass" class="input-field" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn-cyan" style="width:100%;justify-content:center;" onclick="doLogin()">
+        <i data-lucide="log-in" style="width:16px;height:16px;"></i> Entrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;min-height:100vh;">
+  <!-- Sidebar -->
+  <div style="position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;z-index:100;">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;margin-bottom:24px;">
+      <div style="width:32px;height:32px;background:rgba(34,211,238,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(34,211,238,.2);">
+        <i data-lucide="tv-2" style="color:var(--cyan);width:16px;height:16px;"></i>
+      </div>
+      <span style="font-weight:700;font-size:15px;color:var(--text);">StreamHub</span>
+    </div>
+    <nav style="flex:1;display:flex;flex-direction:column;gap:4px;">
+      <div class="sidebar-item active" id="nav-providers" onclick="showSection('providers')">
+        <i data-lucide="server" style="width:16px;height:16px;"></i> Provedores
+      </div>
+      <div class="sidebar-item" id="nav-updates" onclick="showSection('updates')">
+        <i data-lucide="upload-cloud" style="width:16px;height:16px;"></i> Atualizações
+      </div>
+    </nav>
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:0 4px;">
+        <i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
+        Sessão: <span id="sessionTimer" style="color:var(--cyan);">15:00</span>
+      </div>
+      <div class="sidebar-item" onclick="logout()" style="color:#f87171;">
+        <i data-lucide="log-out" style="width:16px;height:16px;"></i> Sair
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div style="margin-left:220px;padding:32px;min-height:100vh;">
+
+    <!-- PROVIDERS SECTION -->
+    <div id="section-providers" class="section active">
+      <!-- Dashboard View -->
+      <div id="view-dashboard">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+          <div>
+            <h2 style="font-size:22px;font-weight:700;">Provedores IPTV</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Gerencie os provedores de conteúdo</p>
+          </div>
+          <button class="btn-cyan" onclick="showManageView(null)">
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Novo Provedor
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+          <div class="glass" style="padding:20px;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Total Provedores</div>
+            <div style="font-size:28px;font-weight:700;color:var(--cyan);" id="statTotal">0</div>
+          </div>
+          <div class="glass" style="padding:20px;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Total Hosts</div>
+            <div style="font-size:28px;font-weight:700;color:var(--cyan);" id="statHosts">0</div>
+          </div>
+          <div class="glass" style="padding:20px;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Última Atualização</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-top:6px;" id="statLastUpdate">—</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="glass" style="overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-weight:600;font-size:15px;">Lista de Provedores</span>
+            <button class="btn-ghost" onclick="loadProviders()" style="padding:6px 12px;font-size:13px;">
+              <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Atualizar
+            </button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nome</th>
+                  <th>Hosts</th>
+                  <th>Atualizado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="providersTableBody">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage View -->
+      <div id="view-manage" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+          <button class="btn-ghost" onclick="showDashboardView()" style="padding:8px 12px;">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+          </button>
+          <div>
+            <h2 style="font-size:22px;font-weight:700;" id="manageTitle">Novo Provedor</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px;">Preencha os dados do provedor</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;align-items:start;">
+          <!-- Left: Code + Name -->
+          <div class="glass" style="padding:24px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:20px;color:var(--cyan);">Informações</h3>
+            <div style="margin-bottom:16px;">
+              <div class="label">Código do Provedor *</div>
+              <input type="text" id="providerCode" class="input-field" placeholder="ex: netflix" />
+              <p style="font-size:11px;color:var(--muted);margin-top:4px;">Identificador único (sem espaços)</p>
+            </div>
+            <div style="margin-bottom:24px;">
+              <div class="label">Nome do Provedor *</div>
+              <input type="text" id="providerName" class="input-field" placeholder="ex: Netflix Premium" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn-cyan" style="width:100%;justify-content:center;" onclick="saveProvider()">
+                <i data-lucide="save" style="width:16px;height:16px;"></i> Salvar Provedor
+              </button>
+              <button class="btn-ghost" style="width:100%;justify-content:center;" onclick="showDashboardView()">
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Hosts -->
+          <div class="glass" style="padding:24px;">
+            <h3 style="font-size:14px;font-weight:600;margin-bottom:20px;color:var(--cyan);">
+              Hosts <span style="color:var(--muted);font-weight:400;">(máx. 15)</span>
+            </h3>
+            <div id="hostsContainer" style="display:flex;flex-direction:column;gap:10px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPDATES SECTION -->
+    <div id="section-updates" class="section">
+      <div style="margin-bottom:28px;">
+        <h2 style="font-size:22px;font-weight:700;">Atualizações do App</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:2px;">Publique novas versões — cole a URL do APK hospedado</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+        <!-- Form -->
+        <div class="glass" style="padding:24px;">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:20px;color:var(--cyan);">Nova Versão</h3>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div>
+              <div class="label">Nome da Versão *</div>
+              <input type="text" id="versionName" class="input-field" placeholder="ex: 2.1.0" />
+            </div>
+            <div>
+              <div class="label">Código da Versão *</div>
+              <input type="number" id="versionCode" class="input-field" placeholder="ex: 21" />
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <div class="label">Changelog *</div>
+            <textarea id="changelog" class="input-field" rows="4" placeholder="Descreva as mudanças desta versão..." style="resize:vertical;"></textarea>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <div class="label">Atualização Forçada</div>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+              <input type="checkbox" id="forceUpdate" style="width:16px;height:16px;accent-color:var(--cyan);" />
+              <span style="font-size:14px;color:var(--text);">Forçar atualização nos dispositivos</span>
+            </label>
+          </div>
+
+          <!-- URL do APK -->
+          <div style="margin-bottom:20px;">
+            <div class="label">URL do APK *</div>
+            <input type="url" id="apkUrl" class="input-field" placeholder="https://github.com/user/repo/releases/download/v2.1.0/app.apk" />
+            <p style="font-size:11px;color:var(--muted);margin-top:6px;">
+              Cole a URL direta do APK. Use
+              <a href="https://github.com/new" target="_blank" style="color:var(--cyan);">GitHub Releases</a>,
+              Google Drive, Dropbox ou qualquer link direto.
+            </p>
+          </div>
+
+          <!-- GitHub helper -->
+          <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">
+              <i data-lucide="github" style="width:12px;height:12px;display:inline;vertical-align:middle;margin-right:4px;"></i>
+              Gerador de URL GitHub Releases
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <input type="text" id="ghUser" class="input-field" placeholder="usuario" style="padding:8px 10px;font-size:13px;" />
+              <input type="text" id="ghRepo" class="input-field" placeholder="repositorio" style="padding:8px 10px;font-size:13px;" />
+            </div>
+            <input type="text" id="ghFile" class="input-field" placeholder="app-release.apk" style="padding:8px 10px;font-size:13px;margin-bottom:8px;" />
+            <button type="button" onclick="generateGhUrl()" class="btn-ghost" style="width:100%;justify-content:center;padding:7px;font-size:13px;">
+              <i data-lucide="link" style="width:13px;height:13px;"></i> Gerar e preencher URL
+            </button>
+          </div>
+
+          <button class="btn-cyan" style="width:100%;justify-content:center;" onclick="publishUpdate()">
+            <i data-lucide="send" style="width:16px;height:16px;"></i> Publicar Atualização
+          </button>
+        </div>
+
+        <!-- Current Config -->
+        <div>
+          <div class="glass" style="padding:24px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <h3 style="font-size:14px;font-weight:600;color:var(--cyan);">Versão Atual</h3>
+              <button class="btn-ghost" onclick="loadCurrentUpdate()" style="padding:6px 10px;font-size:12px;">
+                <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>
+              </button>
+            </div>
+            <div id="currentUpdateCard">
+              <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">Carregando...</p>
+            </div>
+          </div>
+
+          <div class="glass" style="padding:20px;">
+            <h3 style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;">Como funciona</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div style="width:20px;height:20px;background:rgba(34,211,238,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                  <span style="font-size:10px;color:var(--cyan);font-weight:700;">1</span>
+                </div>
+                <p style="font-size:13px;color:var(--muted);">O APK é enviado diretamente ao Telegram via Bot API</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div style="width:20px;height:20px;background:rgba(34,211,238,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                  <span style="font-size:10px;color:var(--cyan);font-weight:700;">2</span>
+                </div>
+                <p style="font-size:13px;color:var(--muted);">A URL de download é salva no Firebase RTDB</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div style="width:20px;height:20px;background:rgba(34,211,238,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                  <span style="font-size:10px;color:var(--cyan);font-weight:700;">3</span>
+                </div>
+                <p style="font-size:13px;color:var(--muted);">O app verifica o Firebase e baixa a nova versão</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div class="glass" style="width:100%;max-width:380px;padding:28px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="width:40px;height:40px;background:rgba(239,68,68,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(239,68,68,.2);">
+        <i data-lucide="trash-2" style="color:#f87171;width:20px;height:20px;"></i>
+      </div>
+      <div>
+        <h3 style="font-weight:700;font-size:16px;">Excluir Provedor</h3>
+        <p style="color:var(--muted);font-size:13px;">Esta ação não pode ser desfeita</p>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">
+      Tem certeza que deseja excluir o provedor <strong style="color:var(--text);" id="deleteProviderName"></strong>?
+    </p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-ghost" style="flex:1;justify-content:center;" onclick="closeDeleteModal()">Cancelar</button>
+      <button style="flex:1;justify-content:center;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 20px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;" onclick="confirmDelete()">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ─── Firebase ───────────────────────────────────────────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, get, set, remove, child } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAyhGKcUAZ4zgh8ZJR28vYKQKZ0rpfRTD0",
+  databaseURL: "https://streamhub-855ab-default-rtdb.firebaseio.com",
+  projectId: "streamhub-855ab",
+  storageBucket: "streamhub-855ab.appspot.com",
+  messagingSenderId: "placeholder",
+  appId: "placeholder"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const MAX_HOSTS = 15;
+const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 min
+const TG_BOT_TOKEN = "8307262333:AAECFAbCikoNr6QPbDdGAAMBuyfBDwtrAYo";
+const TG_CHAT_ID = "-1003601165948";
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let sessionTimer = null;
+let sessionRemaining = SESSION_TIMEOUT;
+let sessionInterval = null;
+let editingCode = null; // original code when editing
+let deleteTarget = null;
+let selectedFile = null;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function sha512(str) {
+  return CryptoJS.SHA512(str).toString();
+}
+
+function showLoading(msg = 'Carregando...') {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function toast(msg, type = 'info', duration = 3500) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success: 'check-circle', error: 'x-circle', info: 'info' };
+  t.innerHTML = `<i data-lucide="${icons[type]||'info'}" style="width:16px;height:16px;flex-shrink:0;"></i><span>${msg}</span>`;
+  c.appendChild(t);
+  lucide.createIcons({ nodes: [t] });
+  setTimeout(() => {
+    t.style.animation = 'fadeOut .3s ease forwards';
+    setTimeout(() => t.remove(), 300);
+  }, duration);
+}
+
+function formatDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+async function initAuth() {
+  showLoading('Verificando configuração...');
+  try {
+    const snap = await get(ref(db, 'admin/hash'));
+    hideLoading();
+    if (!snap.exists()) {
+      document.getElementById('authSubtitle').textContent = 'Configuração inicial';
+      document.getElementById('setupForm').style.display = 'block';
+    } else {
+      document.getElementById('loginForm').style.display = 'block';
+    }
+    lucide.createIcons();
+  } catch(e) {
+    hideLoading();
+    toast('Erro ao conectar ao Firebase: ' + e.message, 'error');
+    document.getElementById('loginForm').style.display = 'block';
+  }
+}
+
+window.setupPassword = async function() {
+  const p = document.getElementById('setupPass').value;
+  const c = document.getElementById('setupPassConfirm').value;
+  if (p.length < 8) { toast('Senha deve ter no mínimo 8 caracteres', 'error'); return; }
+  if (p !== c) { toast('Senhas não coincidem', 'error'); return; }
+  showLoading('Salvando senha...');
+  try {
+    await set(ref(db, 'admin/hash'), sha512(p));
+    hideLoading();
+    toast('Senha criada com sucesso!', 'success');
+    document.getElementById('setupForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('authSubtitle').textContent = 'Painel de Controle';
+  } catch(e) {
+    hideLoading();
+    toast('Erro ao salvar: ' + e.message, 'error');
+  }
+};
+
+window.doLogin = async function() {
+  const p = document.getElementById('loginPass').value;
+  if (!p) { toast('Digite a senha', 'error'); return; }
+  showLoading('Autenticando...');
+  try {
+    const snap = await get(ref(db, 'admin/hash'));
+    hideLoading();
+    if (!snap.exists()) { toast('Nenhuma senha configurada', 'error'); return; }
+    if (sha512(p) === snap.val()) {
+      startSession();
+    } else {
+      toast('Senha incorreta', 'error');
+      document.getElementById('loginPass').value = '';
+    }
+  } catch(e) {
+    hideLoading();
+    toast('Erro de autenticação: ' + e.message, 'error');
+  }
+};
+
+function startSession() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  lucide.createIcons();
+  resetSessionTimer();
+  loadProviders();
+  loadCurrentUpdate();
+  document.addEventListener('mousemove', resetSessionTimer);
+  document.addEventListener('keydown', resetSessionTimer);
+  document.addEventListener('click', resetSessionTimer);
+}
+
+function resetSessionTimer() {
+  sessionRemaining = SESSION_TIMEOUT;
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(logout, SESSION_TIMEOUT);
+}
+
+function startSessionCountdown() {
+  clearInterval(sessionInterval);
+  sessionInterval = setInterval(() => {
+    sessionRemaining = Math.max(0, sessionRemaining - 1000);
+    const m = Math.floor(sessionRemaining / 60000);
+    const s = Math.floor((sessionRemaining % 60000) / 1000);
+    const el = document.getElementById('sessionTimer');
+    if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (sessionRemaining <= 0) clearInterval(sessionInterval);
+  }, 1000);
+}
+
+window.logout = function() {
+  clearTimeout(sessionTimer);
+  clearInterval(sessionInterval);
+  document.removeEventListener('mousemove', resetSessionTimer);
+  document.removeEventListener('keydown', resetSessionTimer);
+  document.removeEventListener('click', resetSessionTimer);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('loginPass').value = '';
+  toast('Sessão encerrada', 'info');
+};
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+window.showSection = function(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+};
+
+// ─── Providers ────────────────────────────────────────────────────────────────
+window.loadProviders = async function() {
+  try {
+    const snap = await get(ref(db, 'provedores'));
+    const tbody = document.getElementById('providersTableBody');
+    if (!snap.exists()) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Nenhum provedor cadastrado</td></tr>';
+      document.getElementById('statTotal').textContent = '0';
+      document.getElementById('statHosts').textContent = '0';
+      document.getElementById('statLastUpdate').textContent = '—';
+      return;
+    }
+    const data = snap.val();
+    const keys = Object.keys(data);
+    let totalHosts = 0;
+    let lastTs = 0;
+    let rows = '';
+    keys.forEach(code => {
+      const p = data[code];
+      const hosts = p.hosts ? p.hosts.filter(h => h && h.trim()).length : 0;
+      totalHosts += hosts;
+      if (p.updated_at && p.updated_at > lastTs) lastTs = p.updated_at;
+      rows += `<tr>
+        <td><span class="badge badge-cyan">${escHtml(code)}</span></td>
+        <td style="font-weight:500;">${escHtml(p.name || '—')}</td>
+        <td><span class="badge badge-gray">${hosts}/${MAX_HOSTS}</span></td>
+        <td style="color:var(--muted);font-size:13px;">${formatDate(p.updated_at)}</td>
+        <td>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-edit" onclick="showManageView('${escHtml(code)}')">
+              <i data-lucide="pencil" style="width:13px;height:13px;"></i> Editar
+            </button>
+            <button class="btn-danger" onclick="openDeleteModal('${escHtml(code)}','${escHtml(p.name||code)}')">
+              <i data-lucide="trash-2" style="width:13px;height:13px;"></i> Excluir
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = rows;
+    document.getElementById('statTotal').textContent = keys.length;
+    document.getElementById('statHosts').textContent = totalHosts;
+    document.getElementById('statLastUpdate').textContent = formatDate(lastTs);
+    lucide.createIcons();
+  } catch(e) {
+    toast('Erro ao carregar provedores: ' + e.message, 'error');
+  }
+};
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+window.showManageView = async function(code) {
+  editingCode = code;
+  document.getElementById('view-dashboard').style.display = 'none';
+  document.getElementById('view-manage').style.display = 'block';
+  document.getElementById('manageTitle').textContent = code ? 'Editar Provedor' : 'Novo Provedor';
+
+  // Build host inputs
+  const container = document.getElementById('hostsContainer');
+  container.innerHTML = '';
+  for (let i = 0; i < MAX_HOSTS; i++) {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    div.innerHTML = `
+      <span style="font-size:12px;color:var(--muted);width:20px;text-align:right;flex-shrink:0;">${i+1}</span>
+      <input type="url" id="host_${i}" class="input-field" placeholder="https://..." style="flex:1;" />
+    `;
+    container.appendChild(div);
+  }
+
+  if (code) {
+    showLoading('Carregando provedor...');
+    try {
+      const snap = await get(ref(db, `provedores/${code}`));
+      hideLoading();
+      if (snap.exists()) {
+        const p = snap.val();
+        document.getElementById('providerCode').value = code;
+        document.getElementById('providerName').value = p.name || '';
+        const hosts = p.hosts || [];
+        hosts.forEach((h, i) => {
+          const el = document.getElementById(`host_${i}`);
+          if (el) el.value = h || '';
+        });
+      }
+    } catch(e) {
+      hideLoading();
+      toast('Erro ao carregar: ' + e.message, 'error');
+    }
+  } else {
+    document.getElementById('providerCode').value = '';
+    document.getElementById('providerName').value = '';
+  }
+  lucide.createIcons();
+};
+
+window.showDashboardView = function() {
+  document.getElementById('view-manage').style.display = 'none';
+  document.getElementById('view-dashboard').style.display = 'block';
+  editingCode = null;
+};
+
+window.saveProvider = async function() {
+  const code = document.getElementById('providerCode').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const name = document.getElementById('providerName').value.trim();
+  if (!code) { toast('Código do provedor é obrigatório', 'error'); return; }
+  if (!name) { toast('Nome do provedor é obrigatório', 'error'); return; }
+  if (!/^[a-z0-9_\-]+$/.test(code)) { toast('Código inválido: use apenas letras, números, _ e -', 'error'); return; }
+
+  const hosts = [];
+  for (let i = 0; i < MAX_HOSTS; i++) {
+    const v = (document.getElementById(`host_${i}`)?.value || '').trim();
+    hosts.push(v);
+  }
+
+  const filledHosts = hosts.filter(h => h);
+  if (filledHosts.length === 0) { toast('Adicione pelo menos 1 host', 'error'); return; }
+
+  const authToken = sha512(code + name + Date.now());
+  const payload = {
+    name,
+    hosts,
+    auth_token: authToken,
+    updated_at: Date.now()
+  };
+
+  showLoading('Salvando provedor...');
+  try {
+    // Migration: if code changed, clone to new node and delete old
+    if (editingCode && editingCode !== code) {
+      await set(ref(db, `provedores/${code}`), payload);
+      await remove(ref(db, `provedores/${editingCode}`));
+      toast(`Provedor migrado de "${editingCode}" para "${code}"`, 'success');
+    } else {
+      await set(ref(db, `provedores/${code}`), payload);
+      toast('Provedor salvo com sucesso!', 'success');
+    }
+    hideLoading();
+    showDashboardView();
+    loadProviders();
+  } catch(e) {
+    hideLoading();
+    toast('Erro ao salvar: ' + e.message, 'error');
+  }
+};
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+window.openDeleteModal = function(code, name) {
+  deleteTarget = code;
+  document.getElementById('deleteProviderName').textContent = name;
+  const m = document.getElementById('deleteModal');
+  m.style.display = 'flex';
+  lucide.createIcons();
+};
+
+window.closeDeleteModal = function() {
+  document.getElementById('deleteModal').style.display = 'none';
+  deleteTarget = null;
+};
+
+window.confirmDelete = async function() {
+  if (!deleteTarget) return;
+  closeDeleteModal();
+  showLoading('Excluindo provedor...');
+  try {
+    await remove(ref(db, `provedores/${deleteTarget}`));
+    hideLoading();
+    toast('Provedor excluído', 'success');
+    loadProviders();
+  } catch(e) {
+    hideLoading();
+    toast('Erro ao excluir: ' + e.message, 'error');
+  }
+};
+
+// ─── App Updates ──────────────────────────────────────────────────────────────
+window.handleFileSelect = function(file) {
+  if (!file) return;
+  if (!file.name.endsWith('.apk')) { toast('Selecione um arquivo .apk', 'error'); return; }
+  selectedFile = file;
+  const dz = document.getElementById('dropZoneContent');
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  dz.innerHTML = `
+    <i data-lucide="file-check" style="width:32px;height:32px;color:var(--cyan);margin:0 auto 10px;display:block;"></i>
+    <p style="color:var(--cyan);font-size:14px;font-weight:600;">${escHtml(file.name)}</p>
+    <p style="color:var(--muted);font-size:12px;margin-top:4px;">${sizeMB} MB — Clique para trocar</p>
+  `;
+  lucide.createIcons();
+};
+
+// Drag & Drop
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFileSelect(f);
+  });
+});
+
+async function getTelegramFileUrl(fileId) {
+  const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
+  const data = await res.json();
+  if (!data.ok) throw new Error('Falha ao obter URL do arquivo');
+  return `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${data.result.file_path}`;
+}
+
+window.generateGhUrl = function() {
+  const user = document.getElementById('ghUser').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const file = document.getElementById('ghFile').value.trim();
+  const ver = document.getElementById('versionName').value.trim();
+  if (!user || !repo || !file) { toast('Preencha usuário, repositório e arquivo', 'error'); return; }
+  const tag = ver ? `v${ver}` : 'latest';
+  const url = `https://github.com/${user}/${repo}/releases/download/${tag}/${file}`;
+  document.getElementById('apkUrl').value = url;
+  toast('URL gerada!', 'success');
+};
+
+window.publishUpdate = async function() {
+  const versionName = document.getElementById('versionName').value.trim();
+  const versionCode = parseInt(document.getElementById('versionCode').value);
+  const changelog = document.getElementById('changelog').value.trim();
+  const forceUpdate = document.getElementById('forceUpdate').checked;
+  const downloadUrl = document.getElementById('apkUrl').value.trim();
+
+  if (!versionName) { toast('Nome da versão é obrigatório', 'error'); return; }
+  if (!versionCode || isNaN(versionCode)) { toast('Código da versão inválido', 'error'); return; }
+  if (!changelog) { toast('Changelog é obrigatório', 'error'); return; }
+  if (!downloadUrl || !downloadUrl.startsWith('http')) { toast('URL do APK inválida', 'error'); return; }
+
+  showLoading('Publicando atualização...');
+  try {
+    await set(ref(db, 'app_config/update'), {
+      version_code: versionCode,
+      version_name: versionName,
+      download_url: downloadUrl,
+      force_update: forceUpdate,
+      changelog,
+      published_at: Date.now()
+    });
+    hideLoading();
+
+    // Reset form
+    document.getElementById('versionName').value = '';
+    document.getElementById('versionCode').value = '';
+    document.getElementById('changelog').value = '';
+    document.getElementById('forceUpdate').checked = false;
+    document.getElementById('apkUrl').value = '';
+    document.getElementById('ghUser').value = '';
+    document.getElementById('ghRepo').value = '';
+    document.getElementById('ghFile').value = '';
+
+    toast('Atualização publicada com sucesso!', 'success', 5000);
+    loadCurrentUpdate();
+  } catch(e) {
+    hideLoading();
+    toast('Erro: ' + e.message, 'error', 6000);
+  }
+};
+
+window.loadCurrentUpdate = async function() {
+  const card = document.getElementById('currentUpdateCard');
+  try {
+    const snap = await get(ref(db, 'app_config/update'));
+    if (!snap.exists()) {
+      card.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">Nenhuma versão publicada</p>';
+      return;
+    }
+    const u = snap.val();
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <span style="font-size:20px;font-weight:700;color:var(--cyan);">${escHtml(u.version_name || '—')}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">build ${u.version_code || '—'}</span>
+        </div>
+        ${u.force_update ? '<span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);">Forçada</span>' : '<span class="badge badge-gray">Opcional</span>'}
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Publicado em ${formatDate(u.published_at)}</p>
+      ${u.changelog ? `<div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:12px;"><p style="font-size:13px;color:var(--muted);white-space:pre-wrap;">${escHtml(u.changelog)}</p></div>` : ''}
+      ${u.download_url ? `<a href="${escHtml(u.download_url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--cyan);text-decoration:none;">
+        <i data-lucide="download" style="width:14px;height:14px;"></i> Download APK
+      </a>` : ''}
+    `;
+    lucide.createIcons();
+  } catch(e) {
+    card.innerHTML = `<p style="color:#f87171;font-size:13px;">Erro ao carregar: ${escHtml(e.message)}</p>`;
+  }
+};
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+initAuth();
+startSessionCountdown();
+</script>
+<script>
+// Unregister any old service workers to prevent chrome-extension cache errors
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+</script>
+</body>
+</html>

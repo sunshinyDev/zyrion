@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="zyrionAdmin icon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="#0a0a0c"/>
+  <rect x="34" y="34" width="444" height="444" rx="90" fill="none" stroke="url(#g)" stroke-width="10"/>
+  <path d="M256 96l128 52v90c0 80-48 139-128 177-80-38-128-97-128-177v-90l128-52z" fill="url(#g)" opacity="0.18"/>
+  <text x="256" y="292" text-anchor="middle" font-size="130" font-family="Segoe UI, Arial, sans-serif" font-weight="700" fill="url(#g)">ZA</text>
+</svg>
