@@ -1,0 +1,52 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          cache: true
+
+      - name: Get version from tag
+        id: ver
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "name=$TAG" >> $GITHUB_OUTPUT
+          echo "code=$(echo $TAG | tr -d '.')" >> $GITHUB_OUTPUT
+
+      - name: Write google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --build-name=${{ steps.ver.outputs.name }} --build-number=${{ steps.ver.outputs.code }}
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/zyrion-${{ steps.ver.outputs.name }}.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/zyrion-${{ steps.ver.outputs.name }}.apk
+
+      - name: Update Firebase
+        run: |
+          URL="https://github.com/${{ github.repository }}/releases/download/v${{ steps.ver.outputs.name }}/zyrion-${{ steps.ver.outputs.name }}.apk"
+          curl -s -X PUT "${{ secrets.FIREBASE_DB_URL }}/app_config/update.json?auth=${{ secrets.FIREBASE_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"version_code\":${{ steps.ver.outputs.code }},\"version_name\":\"${{ steps.ver.outputs.name }}\",\"download_url\":\"$URL\",\"force_update\":false,\"changelog\":\"Versao ${{ steps.ver.outputs.name }}\",\"published_at\":$(date +%s000)}"
