@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
+// Lista de Redundância
 const EPG_SOURCES = [
     'https://github.com/limaalef/BrazilTVEPG/raw/main/epg.xml',
     'https://iptv-org.github.io/epg/guides/br.xml',
@@ -10,23 +11,27 @@ const EPG_SOURCES = [
     'http://bit.ly/EPG-BR1'
 ];
 
-const OUTPUT_FILE = 'epg_final.xml';
+// __dirname garante que o arquivo seja salvo na mesma pasta do script (zyrion/epg/)
+const OUTPUT_FILE = path.join(__dirname, 'epg_final.xml');
 
 async function baixarComRedundancia() {
-    console.log(`[${new Date().toISOString()}] Iniciando verificação...`);
+    console.log(`\n[${new Date().toISOString()}] Iniciando atualização do EPG...`);
+    
     let sucesso = false;
 
     for (let i = 0; i < EPG_SOURCES.length; i++) {
         const url = EPG_SOURCES[i];
+        console.log(`Tentando Fonte ${i + 1}: ${url}`);
+
         try {
             const response = await axios({
                 method: 'get',
                 url: url,
-                timeout: 30000,
+                timeout: 20000, // 20 segundos
                 responseType: 'stream'
             });
 
-            const writer = fs.createWriteStream(path.resolve(__dirname, OUTPUT_FILE));
+            const writer = fs.createWriteStream(OUTPUT_FILE);
             response.data.pipe(writer);
 
             await new Promise((resolve, reject) => {
@@ -34,14 +39,19 @@ async function baixarComRedundancia() {
                 writer.on('error', reject);
             });
 
-            console.log(`✅ Sucesso! Fonte ${i + 1}`);
+            console.log(`✅ Sucesso! Arquivo gerado em: ${OUTPUT_FILE}`);
             sucesso = true;
             break; 
+
         } catch (error) {
-            console.error(`⚠️ Fonte ${i + 1} falhou.`);
+            console.error(`⚠️ Fonte ${i + 1} falhou. Tentando próxima...`);
         }
     }
-    if (!sucesso) process.exit(1);
+
+    if (!sucesso) {
+        console.error('❌ ERRO: Todas as fontes falharam.');
+        process.exit(1); // Força o GitHub Actions a marcar como erro se nada funcionar
+    }
 }
 
 baixarComRedundancia();
