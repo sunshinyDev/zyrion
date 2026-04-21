@@ -2,7 +2,8 @@ name: ZyrionPlay EPG Engine
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    # '0 * * * *' significa: Executar no minuto 0 de cada hora
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 env:
@@ -25,20 +26,17 @@ jobs:
 
       - name: Instalar Dependências
         run: |
-          # Entramos apenas na pasta epg
           cd epg
           npm init -y
           npm install axios
 
       - name: Executar Script de Redundância
-        # Executamos o script direto da pasta epg
         run: node epg/update_epg.js
 
       - name: Salvar Alterações no GitHub
         run: |
           git config --global user.name "Zyrion-Bot"
           git config --global user.email "bot@zyrionplay.com"
-          # Adicionamos o arquivo gerado na pasta epg
           git add epg/epg_final.xml
-          git commit -m "Bot: EPG atualizado via redundância [$(date)]" || echo "Sem alterações"
+          git commit -m "Bot: EPG atualizado de hora em hora [$(date)]" || echo "Sem alterações"
           git push
