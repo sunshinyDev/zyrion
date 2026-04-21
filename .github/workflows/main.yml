@@ -20,19 +20,22 @@ jobs:
         with:
           node-version: 24
 
-      - name: Instalar Axios na pasta correta
+      - name: Instalar Dependências
+        # Entramos na pasta, iniciamos o projeto e instalamos o axios localmente
         run: |
           cd zyrion/epg
           npm init -y
           npm install axios
 
       - name: Executar Script de Redundância
+        # Rodamos o script apontando para o caminho correto
         run: node zyrion/epg/update_epg.js
 
       - name: Salvar Alterações no GitHub
         run: |
           git config --global user.name "Zyrion-Bot"
           git config --global user.email "bot@zyrionplay.com"
+          # Adicionamos especificamente o arquivo gerado na pasta correta
           git add zyrion/epg/epg_final.xml
-          git commit -m "Bot: EPG atualizado via redundância [$(date)]" || echo "Sem alterações"
+          git commit -m "Bot: EPG atualizado via redundância [$(date)]" || echo "Sem alterações para salvar"
           git push
