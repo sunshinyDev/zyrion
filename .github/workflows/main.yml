@@ -1,0 +1,33 @@
+name: Atualizar EPG ZyrionPlay
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Roda a cada 6 horas
+  workflow_dispatch: # Permite rodar manualmente pelo site do GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Instalar Dependências
+        run: npm install axios
+
+      - name: Executar Script de Redundância
+        run: node update_epg.js
+
+      - name: Commit e Push do EPG Final
+        run: |
+          git config --global user.name "ZyrionBot"
+          git config --global user.email "bot@zyrionplay.com"
+          git add epg_final.xml
+          git commit -m "Bot: EPG atualizado via redundância [$(date)]" || echo "Sem mudanças no EPG"
+          git push
