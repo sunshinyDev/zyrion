@@ -2,7 +2,6 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-// Lista de Redundância
 const EPG_SOURCES = [
     'https://github.com/limaalef/BrazilTVEPG/raw/main/epg.xml',
     'https://iptv-org.github.io/epg/guides/br.xml',
@@ -11,12 +10,11 @@ const EPG_SOURCES = [
     'http://bit.ly/EPG-BR1'
 ];
 
-// __dirname garante que o arquivo seja salvo na mesma pasta do script (zyrion/epg/)
+// Isso garante que o XML seja salvo dentro de zyrion/epg/
 const OUTPUT_FILE = path.join(__dirname, 'epg_final.xml');
 
 async function baixarComRedundancia() {
-    console.log(`\n[${new Date().toISOString()}] Iniciando atualização do EPG...`);
-    
+    console.log(`[${new Date().toISOString()}] Iniciando busca de EPG...`);
     let sucesso = false;
 
     for (let i = 0; i < EPG_SOURCES.length; i++) {
@@ -27,7 +25,7 @@ async function baixarComRedundancia() {
             const response = await axios({
                 method: 'get',
                 url: url,
-                timeout: 20000, // 20 segundos
+                timeout: 25000,
                 responseType: 'stream'
             });
 
@@ -39,18 +37,17 @@ async function baixarComRedundancia() {
                 writer.on('error', reject);
             });
 
-            console.log(`✅ Sucesso! Arquivo gerado em: ${OUTPUT_FILE}`);
+            console.log(`✅ Sucesso! Arquivo salvo em: ${OUTPUT_FILE}`);
             sucesso = true;
             break; 
-
         } catch (error) {
-            console.error(`⚠️ Fonte ${i + 1} falhou. Tentando próxima...`);
+            console.error(`⚠️ Fonte ${i + 1} falhou.`);
         }
     }
 
     if (!sucesso) {
-        console.error('❌ ERRO: Todas as fontes falharam.');
-        process.exit(1); // Força o GitHub Actions a marcar como erro se nada funcionar
+        console.error('❌ Todas as fontes falharam.');
+        process.exit(1); 
     }
 }
 
