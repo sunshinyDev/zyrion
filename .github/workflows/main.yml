@@ -5,7 +5,6 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
-# ISSO AQUI CALA O AVISO DO NODE.JS 20
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -26,17 +25,20 @@ jobs:
 
       - name: Instalar Dependências
         run: |
-          cd zyrion/epg
+          # Entramos apenas na pasta epg
+          cd epg
           npm init -y
           npm install axios
 
       - name: Executar Script de Redundância
-        run: node zyrion/epg/update_epg.js
+        # Executamos o script direto da pasta epg
+        run: node epg/update_epg.js
 
       - name: Salvar Alterações no GitHub
         run: |
           git config --global user.name "Zyrion-Bot"
           git config --global user.email "bot@zyrionplay.com"
-          git add zyrion/epg/epg_final.xml
+          # Adicionamos o arquivo gerado na pasta epg
+          git add epg/epg_final.xml
           git commit -m "Bot: EPG atualizado via redundância [$(date)]" || echo "Sem alterações"
           git push
