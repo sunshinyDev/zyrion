@@ -2,15 +2,19 @@ name: ZyrionPlay EPG Engine
 
 on:
   schedule:
-    # '0 */12 * * *' significa: Executar às 00:00 e às 12:00 todos os dias
+    # Executa a cada 12 horas (00:00 e 12:00 UTC)
     - cron: '0 */12 * * *'
-  workflow_dispatch: # Mantém isto para poderes testar manualmente se quiseres
+  workflow_dispatch: # Permite-te rodar manualmente para testar agora
+
+env:
+  # Força o runner a usar Node 24 em todas as ações para evitar o erro de depreciação
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   update-epg:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Obrigatório para o bot salvar o XML
 
     steps:
       - name: Checkout do Repositório
@@ -20,25 +24,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
+
+      - name: Verificar Estrutura de Pastas (Debug)
+        run: ls -R # Isto vai mostrar no log se a pasta 'epg' existe mesmo
 
       - name: Instalar Dependências
-        run: npm install axios
+        run: |
+          # Verifica se existe package.json, se não, instala o axios direto
+          npm install axios
 
       - name: Executar Script de Redundância
         run: node epg/update_epg.js
+        continue-on-error: false
 
       - name: Salvar Alterações no GitHub
         run: |
           git config --global user.name "Zyrion-Bot"
           git config --global user.email "bot@zyrionplay.com"
+          
+          # Adiciona o arquivo gerado
           git add epg/epg_final.xml
           
+          # Só faz commit se houver mudanças reais para evitar erro de 'empty commit'
           if git diff --staged --quiet; then
-            echo "Sem mudanças no EPG. Pulando commit."
+            echo "Nenhuma mudança detectada no EPG."
           else
-            git commit -m "Bot: EPG atualizado (12h cycle) [$(date +'%Y-%m-%d %H:%M')]"
-            git push
+            git commit -m "Bot: EPG atualizado (Ciclo 12h) [$(date +'%Y-%m-%d %H:%M')]"
+            git push origin main
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
